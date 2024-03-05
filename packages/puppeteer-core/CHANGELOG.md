@@ -27,7 +27,7 @@ All notable changes to this project will be documented in this file. See [standa
 
 * implement ElementHandle.uploadFile for WebDriver BiDi ([#11963](https://github.com/puppeteer/puppeteer/issues/11963)) ([accf2b6](https://github.com/puppeteer/puppeteer/commit/accf2b6ca84c93bc700277b4e3382d894fb45a76))
 * **webdriver:** support `Page.deleteCookie()` for WebDriver BiDi ([#12031](https://github.com/puppeteer/puppeteer/issues/12031)) ([7fe22b5](https://github.com/puppeteer/puppeteer/commit/7fe22b533dc96104f28696eb4ff96b2543fd8e5b))
-
+* **firefox:** enable only the required protocol (CDP or BiDi) ([#12014](https://github.com/puppeteer/puppeteer/pull/12014)) ([7fe22b5](https://github.com/puppeteer/puppeteer/commit/1eb6a33aa0df10560b42008f54d4b4333ac10986))
 
 ### Bug Fixes
 

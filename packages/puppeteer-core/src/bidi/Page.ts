@@ -9,7 +9,7 @@ import type Protocol from 'devtools-protocol';
 
 import {firstValueFrom, from, raceWith} from '../../third_party/rxjs/rxjs.js';
 import type {CDPSession} from '../api/CDPSession.js';
-import type {BoundingBox} from '../api/ElementHandle.js';
+import type {BoundingBox, ElementHandle} from '../api/ElementHandle.js';
 import type {WaitForOptions} from '../api/Frame.js';
 import type {HTTPResponse} from '../api/HTTPResponse.js';
 import type {
@@ -96,7 +96,14 @@ export class BidiPage extends Page {
     this.#frame = BidiFrame.from(this, browsingContext);
 
     this.#cdpEmulationManager = new EmulationManager(this.#frame.client);
-    this.accessibility = new Accessibility(this.#frame.client);
+    this.accessibility = new Accessibility(
+      this.#frame.client,
+      (backendDOMNodeId: number) => {
+        return this.mainFrame()
+          .mainRealm()
+          .adoptBackendNode(backendDOMNodeId) as Promise<ElementHandle<Node>>;
+      }
+    );
     this.tracing = new Tracing(this.#frame.client);
     this.coverage = new Coverage(this.#frame.client);
     this.keyboard = new BidiKeyboard(this);

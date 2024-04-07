@@ -80,6 +80,11 @@ export interface SerializedAXNode {
    * Children of this node, if there are any.
    */
   children?: SerializedAXNode[];
+
+  /**
+   * Get a DOM node for this AXNode.
+   */
+  elementHandle(): Promise<ElementHandle | null>;
 }
 
 /**
@@ -122,12 +127,14 @@ export interface SnapshotOptions {
  */
 export class Accessibility {
   #client: CDPSession;
+  #resolveBackendNodeId: any;
 
   /**
    * @internal
    */
-  constructor(client: CDPSession) {
+  constructor(client: CDPSession, resolveBackendNodeId: any) {
     this.#client = client;
+    this.#resolveBackendNodeId = resolveBackendNodeId;
   }
 
   /**
@@ -188,7 +195,7 @@ export class Accessibility {
       });
       backendNodeId = node.backendNodeId;
     }
-    const defaultRoot = AXNode.createTree(nodes);
+    const defaultRoot = AXNode.createTree(nodes, this.#resolveBackendNodeId);
     let needle: AXNode | null = defaultRoot;
     if (backendNodeId) {
       needle = defaultRoot.find(node => {
@@ -260,8 +267,17 @@ class AXNode {
   #role: string;
   #ignored: boolean;
   #cachedHasFocusableChild?: boolean;
+  #resolveElementHandle: (
+    backendNodeId: number
+  ) => Promise<ElementHandle | null>;
 
-  constructor(payload: Protocol.Accessibility.AXNode) {
+  constructor(
+    payload: Protocol.Accessibility.AXNode,
+    resolveElementHandle: (
+      backendNodeId: number
+    ) => Promise<ElementHandle | null>
+  ) {
+    this.#resolveElementHandle = resolveElementHandle;
     this.payload = payload;
     this.#name = this.payload.name ? this.payload.name.value : '';
     this.#role = this.payload.role ? this.payload.role.value : 'Unknown';
@@ -441,6 +457,12 @@ class AXNode {
 
     const node: SerializedAXNode = {
       role: this.#role,
+      elementHandle: async (): Promise<ElementHandle | null> => {
+        if (!this.payload.backendDOMNodeId) {
+          return null;
+        }
+        return this.#resolveElementHandle(this.payload.backendDOMNodeId);
+      },
     };
 
     type UserStringProperty =
@@ -561,10 +583,13 @@ class AXNode {
     return node;
   }
 
-  public static createTree(payloads: Protocol.Accessibility.AXNode[]): AXNode {
+  public static createTree(
+    payloads: Protocol.Accessibility.AXNode[],
+    resolveElementHandle: any
+  ): AXNode {
     const nodeById = new Map<string, AXNode>();
     for (const payload of payloads) {
-      nodeById.set(payload.nodeId, new AXNode(payload));
+      nodeById.set(payload.nodeId, new AXNode(payload, resolveElementHandle));
     }
     for (const node of nodeById.values()) {
       for (const childId of node.payload.childIds || []) {

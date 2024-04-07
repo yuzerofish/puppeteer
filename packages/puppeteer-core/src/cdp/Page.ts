@@ -243,7 +243,14 @@ export class CdpPage extends Page {
     this.#keyboard = new CdpKeyboard(client);
     this.#mouse = new CdpMouse(client, this.#keyboard);
     this.#touchscreen = new CdpTouchscreen(client, this.#keyboard);
-    this.#accessibility = new Accessibility(client);
+    this.#accessibility = new Accessibility(
+      client,
+      (backendDOMNodeId: number) => {
+        return this.mainFrame()
+          .mainRealm()
+          .adoptBackendNode(backendDOMNodeId) as Promise<ElementHandle<Node>>;
+      }
+    );
     this.#frameManager = new FrameManager(
       client,
       this,

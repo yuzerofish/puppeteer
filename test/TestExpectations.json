@@ -623,7 +623,7 @@
     "platforms": ["darwin", "linux", "win32"],
     "parameters": ["webDriverBiDi"],
     "expectations": ["SKIP"],
-    "comment": "TODO: add a comment explaining why this expectation is required (include links to issues)"
+    "comment": "In WebDriver BiDi fetch errors do not result in console message. TODO: investigate if that should be changed."
   },
   {
     "testIdPattern": "[page.spec] Page Page.Events.Console should return remote objects",
@@ -644,7 +644,7 @@
     "platforms": ["darwin", "linux", "win32"],
     "parameters": ["webDriverBiDi"],
     "expectations": ["SKIP"],
-    "comment": "TODO: add a comment explaining why this expectation is required (include links to issues)"
+    "comment": "In WebDriver BiDi fetch errors do not result in console message. TODO: investigate if that should be changed."
   },
   {
     "testIdPattern": "[page.spec] Page Page.Events.error should throw when page crashes",

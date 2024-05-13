@@ -89,3 +89,21 @@ async function installDMG(dmgPath: string, folderPath: string): Promise<void> {
     await exec(`hdiutil detach "${mountPath}" -quiet`);
   }
 }
+
+export async function configureWindowsSandboxPermissionsForChrome(
+  path: string
+): Promise<void> {
+  // See https://bit.ly/31yqMJR
+  const result = spawnSync(
+    'icacls',
+    [path, '/grant', '"ALL APPLICATION PACKAGES:(OI)(CI)(RX)"'],
+    {
+      shell: true,
+    }
+  );
+  if (result.status !== 0) {
+    throw new Error(
+      `Failed to set permissions for ${path}: ${result.stderr.toString('utf8')}`
+    );
+  }
+}

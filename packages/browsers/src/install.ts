@@ -18,7 +18,10 @@ import {
 import {Cache, InstalledBrowser} from './Cache.js';
 import {debug} from './debug.js';
 import {detectBrowserPlatform} from './detectPlatform.js';
-import {unpackArchive} from './fileUtil.js';
+import {
+  configureWindowsSandboxPermissionsForChrome,
+  unpackArchive,
+} from './fileUtil.js';
 import {downloadFile, getJSON, headHttpRequest} from './httpUtil.js';
 
 const debugInstall = debug('puppeteer:browsers:install');
@@ -187,7 +190,8 @@ async function installUrl(
   url: URL,
   options: InstallOptions
 ): Promise<InstalledBrowser | string> {
-  options.platform ??= detectBrowserPlatform();
+  const detectedPlatform = detectBrowserPlatform();
+  options.platform ??= detectedPlatform;
   if (!options.platform) {
     throw new Error(
       `Cannot download a binary for the provided platform: ${os.platform()} (${os.arch()})`
@@ -249,6 +253,23 @@ async function installUrl(
     } finally {
       debugTimeEnd('extract');
     }
+
+    // Try to set sandbox permissions using icacls on Windows for Chrome/Chromium.
+    if (
+      (detectedPlatform === BrowserPlatform.WIN32 ||
+        detectedPlatform === BrowserPlatform.WIN64) &&
+      options.platform === detectedPlatform &&
+      (options.browser === Browser.CHROME ||
+        options.browser === Browser.CHROMIUM)
+    ) {
+      try {
+        debugTime('permissions');
+        await configureWindowsSandboxPermissionsForChrome(outputPath);
+      } finally {
+        debugTimeEnd('permissions');
+      }
+    }
+
     const installedBrowser = new InstalledBrowser(
       cache,
       options.browser,

@@ -601,7 +601,7 @@ export abstract class Page extends EventEmitter<PageEvents> {
 
   #requestHandlers = new WeakMap<Handler<HTTPRequest>, Handler<HTTPRequest>>();
 
-  #inflight$ = new ReplaySubject<number>(1);
+  #inflight$ = new ReplaySubject<[number, number]>(1);
 
   /**
    * @internal
@@ -613,7 +613,7 @@ export abstract class Page extends EventEmitter<PageEvents> {
       .pipe(
         mergeMap(originalRequest => {
           return concat(
-            of(1),
+            of([1, Infinity] as [number, number]),
             merge(
               fromEmitterEvent(this, PageEvent.RequestFailed),
               fromEmitterEvent(this, PageEvent.RequestFinished),
@@ -628,16 +628,19 @@ export abstract class Page extends EventEmitter<PageEvents> {
               }),
               take(1),
               map(() => {
-                return -1;
+                return [-1, Infinity] as [number, number];
               })
             )
           );
         }),
-        mergeScan((acc, addend) => {
-          return of(acc + addend);
-        }, 0),
+        mergeScan(
+          (acc, addend) => {
+            return of([acc[0] + addend[0], Date.now()] as [number, number]);
+          },
+          [0, Infinity] as [number, number]
+        ),
         takeUntil(fromEmitterEvent(this, PageEvent.Close)),
-        startWith(0)
+        startWith([0, Date.now()] as [number, number])
       )
       .subscribe(this.#inflight$);
   }
@@ -1752,10 +1755,10 @@ export abstract class Page extends EventEmitter<PageEvents> {
 
     return this.#inflight$.pipe(
       switchMap(inflight => {
-        if (inflight > concurrency) {
+        if (inflight[0] > concurrency) {
           return EMPTY;
         }
-        return timer(idleTime);
+        return timer(new Date(inflight[1] + idleTime));
       }),
       map(() => {}),
       raceWith(

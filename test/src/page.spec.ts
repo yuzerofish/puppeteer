@@ -922,6 +922,23 @@ describe('Page', function () {
       ]);
       expect(t2).toBeGreaterThan(t1);
     });
+    it('should resolve if network was idle for longer then idleTime', async () => {
+      const {page, server} = await getTestState();
+
+      const idleTime = 25;
+      await page.goto(server.EMPTY_PAGE);
+      await new Promise(resolve => {
+        return setTimeout(resolve, idleTime * 2);
+      });
+      const [t1, t2] = await Promise.all([
+        page.waitForNetworkIdle({idleTime}).then(() => {
+          return Date.now();
+        }),
+        // Add a little bit of time due to async operations
+        Promise.resolve(Date.now() + 10),
+      ]);
+      expect(t2).toBeGreaterThan(t1);
+    });
     it('should work with no timeout', async () => {
       const {page, server} = await getTestState();
       await page.goto(server.EMPTY_PAGE);
